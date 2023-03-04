@@ -33,10 +33,12 @@ int display_clk = 12; //CLK pin of the TM1637 display module, perhaps rename lat
 int display_dio = 13; //DIO pin of the TM1637 display module, perhaps rename later
 
 //variables
-bool locked = false; //flag for locking out other controls when one is activated
+bool lock_1 = false; //flag for locking out axis 1
+bool lock_2 = false; //flag for locking out axis 2
+bool lock_3 = false; //flag for locking out fingers axis
+
 int pressure_val = 0; //raw voltage on the pressure sensor input pin
 int pressure_actual = 0; //mapped actual pressure value in bar (atmospheres)
-int display_value = 0; //integer to output to the TM1637 display module
 
 int axis_1_val = 0; //for storing raw input values from the pots
 int axis_1_out = 0; //for storing output value mapped to appropriate PWM output
@@ -74,30 +76,60 @@ pinMode(display_dio, OUTPUT);
 
 
 //NOTE - center value for joysticks is 512, include hysteresis +-50
+//NOTE - pushing UP on the fingers control should CLOSE the fingers, equivalent to UP_POWER
 
 void loop() {
-locked = false;
-//digitalWrite(down_state, HIGH);
+
+digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW); //reset LEDs
+digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW); //reset LEDs
 
 axis_1_val = analogRead(control_axis_1);
-    if (axis_1_val <= 462) {axis_1_out = map(axis_1_val, 0, 462, 255, 0), digitalWrite(down_state, HIGH), analogWrite(down_power_1, axis_1_out);}
-    else if (axis_1_val >= 562) {axis_1_out = map(axis_1_val, 562, 1023, 0, 255), digitalWrite(up_state, HIGH), analogWrite(up_power_1, axis_1_out);}
-    else axis_1_out = 0, digitalWrite(up_state, LOW), digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(up_power_1, LOW);
-
 axis_2_val = analogRead(control_axis_2);
-    if (axis_2_val <= 462) {axis_2_out = map(axis_2_val, 0, 462, 255, 0), digitalWrite(down_state, HIGH), analogWrite(down_power_2, axis_2_out);}
-    else if (axis_2_val >= 562) {axis_2_out = map(axis_2_val, 562, 1023, 0, 255), digitalWrite(up_state, HIGH), analogWrite(up_power_2, axis_2_out);}
-    else axis_2_out = 0, digitalWrite(up_state, LOW), digitalWrite(down_state, LOW), digitalWrite(down_power_2, LOW), digitalWrite(up_power_2, LOW);
-
 axis_fingers_val = analogRead(fingers_axis);
-
 pressure_val = analogRead(pressure_sensor);
+//==================process axis 1==================
+    if (axis_1_val >= 562){
+        axis_1_out = map(axis_1_val, 562, 1023, 0, 255);
+        if (lock_1 == false){
+        digitalWrite(up_state, HIGH);
+        analogWrite(up_power_1, axis_1_out);
+        }
+        lock_2 = true, lock_3 = true;
+    }
+    if (axis_1_val <= 462){
+        axis_1_out = map(axis_1_val, 0, 462, 255, 0);
+        if (lock_1 == false){
+        digitalWrite(down_state, HIGH);
+        analogWrite(down_power_1, axis_1_out);
+        }
+        lock_2 = true, lock_3 = true;
+    }
+    
+//==================process axis 2==================
+    if (axis_2_val >= 562){
+        axis_2_out = map(axis_2_val, 562, 1023, 0, 255);
+        if (lock_2 == false){
+        digitalWrite(up_state, HIGH);
+        analogWrite(up_power_2, axis_2_out);
+        }
+        lock_1 = true, lock_3 = true;
+    }
+    if (axis_2_val <= 462){
+        axis_2_out = map(axis_2_val, 0, 462, 255, 0);
+        if (lock_2 == false){
+        digitalWrite(down_state, HIGH);
+        analogWrite(down_power_2, axis_2_out);
+        }
+        lock_1 = true, lock_3 = true;
+    }
 
 
 //serial debugging
 Serial.print("A1V: "); Serial.print(axis_1_val); Serial.print(" A1O: "); Serial.print(axis_1_out);
 Serial.print(" A2V: "); Serial.print(axis_2_val); Serial.print(" A2O: "); Serial.print(axis_2_out);
 Serial.print(" FV: "); Serial.print(axis_fingers_val); Serial.print(" FO: "); Serial.print(axis_fingers_out);
-Serial.print(" Pressure val: "); Serial.println(pressure_val);
-
+Serial.print(" Pressure val: "); Serial.print(pressure_val);
+Serial.print(" L1: "); Serial.print(lock_1);
+Serial.print(" L2: "); Serial.print(lock_2);
+Serial.print(" L3: "); Serial.println(lock_3);
 }
