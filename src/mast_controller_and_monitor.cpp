@@ -37,6 +37,19 @@ bool lock_1 = false; //flag for locking out axis 1
 bool lock_2 = false; //flag for locking out axis 2
 bool lock_3 = false; //flag for locking out fingers axis
 
+bool axis_1_neutral = true; //flag for axis 1 being in neutral state
+bool axis_1_up = true; //flag for axis 1 being in UP state
+bool axis_1_down = true; //flag for axis 1 being in DOWN state
+
+bool axis_2_neutral = true; //flag for axis 1 being in neutral state
+bool axis_2_up = true; //flag for axis 2 being in UP state
+bool axis_2_down = true; //flag for axis 2 being in DOWN state
+
+bool axis_fingers_neutral = true; //flag for axis 1 being in neutral state
+bool axis_fingers_close = true; //flag for axis 1 being in UP state
+bool axis_fingers_open = true; //flag for axis 1 being in DOWN state
+
+
 int pressure_val = 0; //raw voltage on the pressure sensor input pin
 int pressure_actual = 0; //mapped actual pressure value in bar (atmospheres)
 
@@ -87,49 +100,96 @@ axis_1_val = analogRead(control_axis_1);
 axis_2_val = analogRead(control_axis_2);
 axis_fingers_val = analogRead(fingers_axis);
 pressure_val = analogRead(pressure_sensor);
-//==================process axis 1==================
-    if (axis_1_val >= 562){
+
+//==================process and map axis 1==================
+if (axis_1_val >= 562){
         axis_1_out = map(axis_1_val, 562, 1023, 0, 255);
-        if (lock_1 == false){
-        digitalWrite(up_state, HIGH);
-        analogWrite(up_power_1, axis_1_out);
+        axis_1_neutral = false;
+        axis_1_up = true;
+        axis_1_down = false;
         }
-        lock_2 = true, lock_3 = true;
-    }
+        
     if (axis_1_val <= 462){
         axis_1_out = map(axis_1_val, 0, 462, 255, 0);
-        if (lock_1 == false){
-        digitalWrite(down_state, HIGH);
-        analogWrite(down_power_1, axis_1_out);
+        axis_1_neutral = false;
+        axis_1_up = false;
+        axis_1_down = true;
         }
-        lock_2 = true, lock_3 = true;
-    }
-    
-//==================process axis 2==================
-    if (axis_2_val >= 562){
+    if (axis_1_val > 462 && axis_1_val <= 562){axis_1_neutral = true, axis_1_up = false, axis_1_down = false;}    
+    if (axis_1_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
+    if (axis_1_neutral != true){lock_1 = false, lock_2 = true, lock_3 = true;}
+//==================process and map axis 2==================
+if (axis_2_val >= 562){
         axis_2_out = map(axis_2_val, 562, 1023, 0, 255);
-        if (lock_2 == false){
-        digitalWrite(up_state, HIGH);
-        analogWrite(up_power_2, axis_2_out);
+        axis_2_neutral = false;
+        axis_2_up = true;
+        axis_2_down = false;
         }
-        lock_1 = true, lock_3 = true;
-    }
+        
     if (axis_2_val <= 462){
         axis_2_out = map(axis_2_val, 0, 462, 255, 0);
-        if (lock_2 == false){
-        digitalWrite(down_state, HIGH);
-        analogWrite(down_power_2, axis_2_out);
+        axis_2_neutral = false;
+        axis_2_up = false;
+        axis_2_down = true;
         }
-        lock_1 = true, lock_3 = true;
-    }
+    if (axis_2_val > 462 && axis_2_val <= 562){axis_2_neutral = true, axis_2_up = false, axis_2_down = false;}
+    if (axis_2_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
+    if (axis_2_neutral != true){lock_1 = true, lock_2 = false, lock_3 = true;}
+//==================process and map axis fingers==================
+if (axis_fingers_val >= 562){
+        axis_fingers_out = map(axis_fingers_val, 562, 1023, 0, 255);
+        axis_fingers_neutral = false;
+        axis_fingers_close = true;
+        axis_fingers_open = false;
+        }
+        
+    if (axis_fingers_val <= 462){
+        axis_fingers_out = map(axis_fingers_val, 0, 462, 255, 0);
+        axis_fingers_neutral = false;
+        axis_fingers_close = false;
+        axis_fingers_open = true;
+        }
+    if (axis_fingers_val > 462 && axis_fingers_val <= 562){axis_fingers_neutral = true, axis_fingers_close = false, axis_fingers_open = false;}
+    if (axis_fingers_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
+    if (axis_fingers_neutral != true){lock_1 = true, lock_2 = true, lock_3 = false;}
+    
+//activate appropriate status LED for up or down and output data to LED on PWM pins
+
+if (axis_1_neutral == true){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
+if (axis_2_neutral == true){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
+if (axis_fingers_neutral == true){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
+
+if (axis_1_up == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LOW), analogWrite(up_power_1, axis_1_out);}
+if (axis_2_up == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LOW), analogWrite(up_power_2, axis_2_out);}
+if (axis_fingers_close == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LOW), analogWrite(fingers_close_power, axis_fingers_out);}
+
+if (axis_1_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_1, axis_1_out);;}
+if (axis_2_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_2, axis_2_out);;}
+if (axis_fingers_open == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(fingers_open_power, axis_fingers_out);}
 
 
 //serial debugging
-Serial.print("A1V: "); Serial.print(axis_1_val); Serial.print(" A1O: "); Serial.print(axis_1_out);
-Serial.print(" A2V: "); Serial.print(axis_2_val); Serial.print(" A2O: "); Serial.print(axis_2_out);
-Serial.print(" FV: "); Serial.print(axis_fingers_val); Serial.print(" FO: "); Serial.print(axis_fingers_out);
-Serial.print(" Pressure val: "); Serial.print(pressure_val);
-Serial.print(" L1: "); Serial.print(lock_1);
-Serial.print(" L2: "); Serial.print(lock_2);
-Serial.print(" L3: "); Serial.println(lock_3);
+//output data on axis 1
+Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
+Serial.print(" A1N:"); Serial.print(axis_1_neutral);
+Serial.print(" A1U:"); Serial.print(axis_1_up);
+Serial.print(" A1D:"); Serial.print(axis_1_down);
+Serial.print(" A1Lock:"); Serial.print(lock_1);
+//output data on axis 2
+Serial.print(" A2V:"); Serial.print(axis_2_val); Serial.print(" A2O:"); Serial.print(axis_2_out);
+Serial.print(" A2N:"); Serial.print(axis_2_neutral);
+Serial.print(" A2U:"); Serial.print(axis_2_up);
+Serial.print(" A2D:"); Serial.print(axis_2_down);
+Serial.print(" A2Lock:"); Serial.print(lock_2);
+//output data on axis fingers
+Serial.print(" FV:"); Serial.print(axis_fingers_val); Serial.print(" FO:"); Serial.print(axis_fingers_out);
+Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
+Serial.print(" AFU: "); Serial.print(axis_fingers_close);
+Serial.print(" AFD: "); Serial.print(axis_fingers_open);
+Serial.print(" AFLock: "); Serial.print(lock_3);
+
+Serial.print(" Pressure val:"); Serial.print(pressure_val);
+
+Serial.println("  ");
+
 }
