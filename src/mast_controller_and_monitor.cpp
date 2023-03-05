@@ -93,12 +93,37 @@ pinMode(display_dio, OUTPUT);
 
 void loop() {
 
-digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW); //reset LEDs
-digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW); //reset LEDs
+//digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW); //reset LEDs
+//digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW); //reset LEDs
 
-axis_1_val = analogRead(control_axis_1);
-axis_2_val = analogRead(control_axis_2);
-axis_fingers_val = analogRead(fingers_axis);
+
+//==================set flags==================
+if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //lock axis if EITHER of two other axes are NOT neutral
+if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //unlock if BOTH other axes are neutral
+
+if (axis_1_neutral == false || axis_fingers_neutral == false){lock_2 = true;} //lock axis if EITHER of two other axes are NOT neutral
+if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //unlock if BOTH other axes are neutral
+
+if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //lock axis if EITHER of two other axes are NOT neutral
+if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //unlock if BOTH other axes are neutral
+
+/*
+if (axis_1_neutral == true){lock_2 = false, lock_3 = false;}
+if (axis_1_neutral == false){lock_2 = true, lock_3 = true;}
+
+if (axis_2_neutral == true){lock_1 = false, lock_3 = false;}
+if (axis_2_neutral == false){lock_1 = true, lock_3 = true;}
+
+if (axis_fingers_neutral == true){lock_1 = false, lock_2 = false;}
+if (axis_fingers_neutral == false){lock_1 = true, lock_2 = true;}
+*/
+
+//==================read values if axis is not locked==================
+if (lock_1 == false){axis_1_val = analogRead(control_axis_1);}
+if (lock_2 == false){axis_2_val = analogRead(control_axis_2);}
+if (lock_3 == false){axis_fingers_val = analogRead(fingers_axis);}
+
+////==================read pressure sensor==================
 pressure_val = analogRead(pressure_sensor);
 
 //==================process and map axis 1==================
@@ -115,9 +140,11 @@ if (axis_1_val >= 562){
         axis_1_up = false;
         axis_1_down = true;
         }
-    if (axis_1_val > 462 && axis_1_val <= 562){axis_1_neutral = true, axis_1_up = false, axis_1_down = false;}    
-    if (axis_1_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
-    if (axis_1_neutral != true){lock_1 = false, lock_2 = true, lock_3 = true;}
+    if (axis_1_val > 462 && axis_1_val <= 562){axis_1_neutral = true, axis_1_up = false, axis_1_down = false, axis_1_out = 0;
+    digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW);
+    digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW);
+    }    
+    
 //==================process and map axis 2==================
 if (axis_2_val >= 562){
         axis_2_out = map(axis_2_val, 562, 1023, 0, 255);
@@ -132,9 +159,11 @@ if (axis_2_val >= 562){
         axis_2_up = false;
         axis_2_down = true;
         }
-    if (axis_2_val > 462 && axis_2_val <= 562){axis_2_neutral = true, axis_2_up = false, axis_2_down = false;}
-    if (axis_2_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
-    if (axis_2_neutral != true){lock_1 = true, lock_2 = false, lock_3 = true;}
+    if (axis_2_val > 462 && axis_2_val <= 562){axis_2_neutral = true, axis_2_up = false, axis_2_down = false, axis_2_out = 0;
+    digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW);
+    digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW);
+    }
+    
 //==================process and map axis fingers==================
 if (axis_fingers_val >= 562){
         axis_fingers_out = map(axis_fingers_val, 562, 1023, 0, 255);
@@ -149,9 +178,10 @@ if (axis_fingers_val >= 562){
         axis_fingers_close = false;
         axis_fingers_open = true;
         }
-    if (axis_fingers_val > 462 && axis_fingers_val <= 562){axis_fingers_neutral = true, axis_fingers_close = false, axis_fingers_open = false;}
-    if (axis_fingers_neutral == true){lock_1 = false, lock_2 = false, lock_3 = false;}
-    if (axis_fingers_neutral != true){lock_1 = true, lock_2 = true, lock_3 = false;}
+    if (axis_fingers_val > 462 && axis_fingers_val <= 562){axis_fingers_neutral = true, axis_fingers_close = false, axis_fingers_open = false, axis_fingers_out = 0;
+    digitalWrite(up_state, LOW), digitalWrite(up_power_1, LOW), digitalWrite(up_power_2, LOW), digitalWrite(fingers_close_power, LOW);
+    digitalWrite(down_state, LOW), digitalWrite(down_power_1, LOW), digitalWrite(down_power_2, LOW), digitalWrite(fingers_open_power, LOW);
+    }
     
 //activate appropriate status LED for up or down and output data to LED on PWM pins
 
@@ -163,8 +193,8 @@ if (axis_1_up == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LO
 if (axis_2_up == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LOW), analogWrite(up_power_2, axis_2_out);}
 if (axis_fingers_close == true){digitalWrite(up_state, HIGH), digitalWrite(down_state, LOW), analogWrite(fingers_close_power, axis_fingers_out);}
 
-if (axis_1_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_1, axis_1_out);;}
-if (axis_2_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_2, axis_2_out);;}
+if (axis_1_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_1, axis_1_out);}
+if (axis_2_down == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(down_power_2, axis_2_out);}
 if (axis_fingers_open == true){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(fingers_open_power, axis_fingers_out);}
 
 
