@@ -1,43 +1,44 @@
 /*
-Drilling mast control system V0.1 by Oleg "Salty NUggeTZ" Velichko and Igor "Terrano"
-Designed to control and monitor a hydraulic system of undisclosed origin and specs
-Hypothetical prototype designed with Fritzing and built on a breadboard
-The system is built around an Arduino NANO
+Система управвления мачты буровой установки
+Разработано Олегом "Salty NUggeTZ" Величко и Игорем "Terrano"
+Разработано с целью управления и мониторинга системы неизвестного происхождения и с неизвестными спецификациями
+Гипотетический прототип разработан в Fritzing и собран на макетной плате
+Система построена на фреймворке Arduino NANO
 */
 
-//==================include necessary libraries==================
-#include <Arduino.h> //include arduino library for use in VSCode PlatformIO (NOT NEEDED WHEN USING ARDUINO IDE!!!)
-#include <Wire.h> //include I2C library
-#include <INA219_WE.h> //include the INA library by Wolfgang Ewald
-#include <TM1637.h> //include the TM1637 library from hard drive, located in .pio folder (download from (https://drive.google.com/file/d/1DN5pDko7D1-F4POXICIfd8m_1sAKBZt7/view)
+//==================ДОБАВЛЕНИЕ НУЖНЫХ БИБЛИОТЕК==================
+#include <Arduino.h> //библиотека Arduino для использования в VSCode PlatformIO (НЕ НУЖНА ЕСЛИ ПИСАТЬ И/ИЛИ ПРОШИВАТЬ ИЗ ARDUINO IDE!!!)
+#include <Wire.h> //библиотека I2C
+#include <INA219_WE.h> //библиотека INA автора Wolfgang Ewald
+#include <TM1637.h> //библиотека TM1637 с жёсткогого диска, находится в папке .pio (можно скачать так же с (https://drive.google.com/file/d/1DN5pDko7D1-F4POXICIfd8m_1sAKBZt7/view)
 
-#define I2C_ADDRESS 0x40 //define I2C address for the INA219 module
+#define I2C_ADDRESS 0x40 //адрес I2C модуля INA219
 
-//==================pin definitions==================
+//==================ОПРЕДЕЛЕНИЯ ПИНОВ==================
 
-//inputs
-//pressure sensor is connected to the INA219 module which is initialized later on
-int axis_1 = A0; //potentiometer joystick for vertical axis 1
-int axis_2 = A1; //potentiometer joystick for vertical axis 2
-int axis_fingers = A2;  //potentiometer joystick for "fingers" axis
+//входы
+//датчик давления подключён к модулю INA219 который будет инициализирован ниже
+int axis_1 = A0; //потенциометр джойстика оси 1
+int axis_2 = A1; //потенциометр джойстика оси 2
+int axis_fingers = A2;  //потенциометр джойстика оси "пальцы"
 
-int neutral_switch_1 = 9; //neutral button within the joystick, neutral state is when the button is NOT pressed
-int neutral_switch_2 = 8; //neutral button within the joystick, neutral state is when the button is NOT pressed
-int neutral_switch_3 = 7; //neutral button within the joystick, neutral state is when the button is NOT pressed
+int neutral_switch_1 = 9; //концевик нейтрального положения джойстика, в нейтральном положении концевик РАЗОМКНУТ
+int neutral_switch_2 = 8; //концевик нейтрального положения джойстика, в нейтральном положении концевик РАЗОМКНУТ
+int neutral_switch_3 = 7; //концевик нейтрального положения джойстика, в нейтральном положении концевик РАЗОМКНУТ
 
-//outputs
-int up_state = 2; //status lights up LED when "up" command is received from any of the vertical axes (ON/OFF output)
-int down_state = 4; //status lights up LED when "down" command is received from any of the vertical axes (ON/OFF output)
+//выходы
+int up_state = 2; //статус движения "вверх", цифровой выход (ВКЛ/ВЫКЛ) включается при получении комманды "ВВЕРХ" от одной из осей (в том числе "пальцы" ОТКРЫТИЕ)
+int down_state = 4; ///статус движения "вниз", цифровой выход (ВКЛ/ВЫКЛ) включается при получении комманды "ВНИЗ" от одной из осей (в том числе "пальцы" ЗАКРЫТИЕ)
 
-int out_power_1 = 6; //PWM output for upwards power of axis 1
-int out_power_2 = 5; //PWM output for upwards power of axis 2
-int out_power_fingers = 3; //PWM output for closing power of "fingers" axis
+int out_power_1 = 6; //ШИМ выход оси 1, пропорционален углу отклонения джойстика
+int out_power_2 = 5; //ШИМ выход оси 2, пропорционален углу отклонения джойстика
+int out_power_fingers = 3; //ШИМ выход оси "пальцы", пропорционален углу отклонения джойстика
 
-//TM1637 display module
-int display_clk = 12; //CLK pin of the TM1637 display module, perhaps rename later
-int display_dio = 13; //DIO pin of the TM1637 display module, perhaps rename later
+//модуль TM1637
+int display_clk = 12; //CLK пин модуля TM1637
+int display_dio = 13; //DIO пин модуля TM1637
 
-//==================variables==================
+//==================ПЕРЕМЕННЫЕ==================
 float current_mA = 0.0; //float variable for reading current from the INA module
 
 bool axis_1_neutral = true; //flag for axis 1 being in neutral state
@@ -72,51 +73,53 @@ int axis_2_out = 0; //for storing output value mapped to appropriate PWM output
 int axis_fingers_val = 0; //for storing raw input value from the joystick
 int axis_fingers_out = 0; //for storing output value mapped to appropriate PWM output
 
-//==================create instances of library objects==================
-INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //create an instance of the INA I2C module
-TM1637 tm1637(display_clk, display_dio); //create an instance of the TM1637 module
+//==================СОЗДАНИЕ ОБЪЕКТОВ БИБЛИОТЕК==================
+INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE
+TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637
 
+//==================НАСТРОЙКИ, выполняется разово при включении МК==================
 void setup() {
-Serial.begin(115200); //initialize serial communication
-Wire.begin(); //initialize the I2C interface
+Serial.begin(115200); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
+Wire.begin(); //инициализуруем интерфейс I2C
 
-//===remove next 2 lines after code is completed and checked and double checked
-  if(!ina219.init()){ //check if the INA module is online 
-    Serial.println("INA219 not connected!");} //return error if the module is not responding
-//===remove previous 2 lines after code is completed and checked and double checked
+//===удалить последующие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
+  if(!ina219.init()){ //проверка подключения модуля ina219 
+    Serial.println("INA219 not connected!");} //возвращает ошибку если модуль не подключён
+//===удалить предыдущие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
 
-tm1637.init(); //initialize the tm1637 module
-  tm1637.set(BRIGHT_TYPICAL); //set brightness level for the display module
+tm1637.init(); //инициализируем модуль tm1637
+  tm1637.set(BRIGHT_TYPICAL); //устанавливаем яркость дисплея
 
-//pinmode definitions for inputs
-pinMode(axis_1, INPUT); //vertical axis 1
-pinMode(neutral_switch_1, INPUT_PULLUP); //vertical axis 1 neutral switch, !!!SWITCH OPEN == NEUTRAL STATE!!!
+//определения режимов работы пинов входов
+pinMode(axis_1, INPUT); //вертикальная ось 1, потенциометр, вход
+pinMode(neutral_switch_1, INPUT_PULLUP); //концевик нейтрали вертикальной оси 1, !!!РАЗОМКНУТ КОНЦЕВИК == НЕЙТРАЛЬНОЕ ПОЛОЖЕНИЕ!!!
 
-pinMode(axis_2, INPUT); //vertical axis 2
-pinMode(neutral_switch_2, INPUT_PULLUP); //vertical axis 2 neutral switch, !!!SWITCH OPEN == NEUTRAL STATE!!!
+pinMode(axis_2, INPUT); //вертикальная ось 2, потенциометр, вход
+pinMode(neutral_switch_2, INPUT_PULLUP); //концевик нейтрали вертикальной оси 2, !!!РАЗОМКНУТ КОНЦЕВИК == НЕЙТРАЛЬНОЕ ПОЛОЖЕНИЕ!!!
 
-pinMode(axis_fingers, INPUT); //fingers axis
-pinMode(neutral_switch_3, INPUT_PULLUP); //fingers axis neutral switch, !!!SWITCH OPEN == NEUTRAL STATE!!!
+pinMode(axis_fingers, INPUT); //ось "пальцы", потенциометр, вход
+pinMode(neutral_switch_3, INPUT_PULLUP); //концевик нейтрали оси "пальцы", !!!РАЗОМКНУТ КОНЦЕВИК == НЕЙТРАЛЬНОЕ ПОЛОЖЕНИЕ!!!
 
-//pinMode(pressure_sensor, INPUT);
+//pinMode(pressure_sensor, INPUT); //легаси, удалить после завершения написания и проверки и перепроверки работоспособности системы
 
-//pinmode definitions for outputs
-pinMode(up_state, OUTPUT);
-pinMode(down_state, OUTPUT);
-pinMode(display_clk, OUTPUT);
-pinMode(display_dio, OUTPUT);
+//определения режимов работы пинов выходов
+pinMode(up_state, OUTPUT); //выход на реле ВВЕРХ
+pinMode(down_state, OUTPUT); //выход на реле ВНИЗ
+pinMode(display_clk, OUTPUT); //выход на пин CLK модуля tm1637
+pinMode(display_dio, OUTPUT); // выход на пин DIO модуля tm1637
 
-//reset lock status to FALSE for all three axes, probably get rid of this once buttons for neutral state are implemented
-lock_1 = false;
-lock_2 = false;
-lock_3 = false;
+//сброс статуса блокировки на ЛОЖЬ для всех трёх осей, скорее всего удалить строку когда будут использоваться концевики
+lock_1 = false; //блокировка оси 1
+lock_2 = false; //блокировка оси 2
+lock_3 = false; //блокировка оси "пальцы"
 
 }
 
 
-//NOTE - center value for joysticks is 512, include hysteresis +-10 (probably get rid of the hysteresis)
-//NOTE - pushing UP on the fingers control should CLOSE the fingers, equivalent to UP_POWER
+//ЗАМЕТКА - центральное положение джойстиков 512, добавить гистерезис +-10, скорректировать после подключения фактических джойстиков
+//ЗАМЕТКА - нажатие джойстиков ВВЕРХ активирует реле "ВВЕРХ", а на оси "пальцы" выполняет "ЗАКРЫТИЕ", возможна корректировка логики работы после подключения фактических джойстиков
 
+//==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
 
 tm1637.clearDisplay(); //clear the display to avoid stuck readings
