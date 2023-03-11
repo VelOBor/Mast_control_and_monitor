@@ -1,5 +1,4 @@
 /*
-Drilling mast control system V0.1 by Oleg "Salty NUggeTZ" Velichko and Igor "Terrano"
 Designed to control and monitor a system of undisclosed origin and specs
 Hypothetical prototype designed with Fritzing and built on a breadboard
 The system is built around an Arduino NANO
