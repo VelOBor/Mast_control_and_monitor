@@ -8,11 +8,11 @@
 
 //==================ДОБАВЛЕНИЕ НУЖНЫХ БИБЛИОТЕК==================
 #include <Arduino.h> //библиотека Arduino для использования в VSCode PlatformIO (НЕ НУЖНА ЕСЛИ ПИСАТЬ И/ИЛИ ПРОШИВАТЬ ИЗ ARDUINO IDE!!!)
-#include <Wire.h> //библиотека I2C
-#include <INA219_WE.h> //библиотека INA автора Wolfgang Ewald
-#include <TM1637.h> //библиотека TM1637 с жёсткогого диска, находится в папке .pio (можно скачать так же с (https://drive.google.com/file/d/1DN5pDko7D1-F4POXICIfd8m_1sAKBZt7/view)
+//#include <Wire.h> //библиотека I2C
+//#include <INA219_WE.h> //библиотека INA автора Wolfgang Ewald
+//#include <TM1637.h> //библиотека TM1637 с жёсткогого диска, находится в папке .pio (можно скачать так же с (https://drive.google.com/file/d/1DN5pDko7D1-F4POXICIfd8m_1sAKBZt7/view)
 
-#define I2C_ADDRESS 0x40 //адрес I2C модуля INA219
+//#define I2C_ADDRESS 0x40 //адрес I2C модуля INA219
 
 //==================ОПРЕДЕЛЕНИЯ ПИНОВ==================
 
@@ -74,21 +74,21 @@ int axis_fingers_val = 0; //for storing raw input value from the joystick
 int axis_fingers_out = 0; //for storing output value mapped to appropriate PWM output
 
 //==================СОЗДАНИЕ ОБЪЕКТОВ БИБЛИОТЕК==================
-INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE
-TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637
+//INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE
+//TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637
 
 //==================НАСТРОЙКИ, выполняется разово при включении МК==================
 void setup() {
 Serial.begin(115200); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
-Wire.begin(); //инициализуруем интерфейс I2C
+//Wire.begin(); //инициализуруем интерфейс I2C
 
 //===удалить последующие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
-  if(!ina219.init()){ //проверка подключения модуля ina219 
-    Serial.println("INA219 not connected!");} //возвращает ошибку если модуль не подключён
+//  if(!ina219.init()){ //проверка подключения модуля ina219 
+//    Serial.println("INA219 not connected!");} //возвращает ошибку если модуль не подключён
 //===удалить предыдущие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
 
-tm1637.init(); //инициализируем модуль tm1637
-  tm1637.set(BRIGHT_TYPICAL); //устанавливаем яркость дисплея
+//tm1637.init(); //инициализируем модуль tm1637
+//  tm1637.set(BRIGHT_TYPICAL); //устанавливаем яркость дисплея
 
 //определения режимов работы пинов входов
 pinMode(axis_1, INPUT); //вертикальная ось 1, потенциометр, вход
@@ -122,7 +122,7 @@ lock_3 = false; //блокировка оси "пальцы"
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
 
-tm1637.clearDisplay(); //clear the display to avoid stuck readings
+//tm1637.clearDisplay(); //clear the display to avoid stuck readings
 
 //==================set flags==================
 if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //lock axis if EITHER of two other axes are NOT neutral
@@ -140,14 +140,14 @@ if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);}
 
 
 //==================get raw data from the pressure sensor==================
-current_mA = ina219.getCurrent_mA(); //read current from the INA module
-current_mA = constrain (current_mA, 0, 30); //limit the value IN SOFTWARE from 0 to 30mA for ease of calculations
+//current_mA = ina219.getCurrent_mA(); //read current from the INA module
+//current_mA = constrain (current_mA, 0, 30); //limit the value IN SOFTWARE from 0 to 30mA for ease of calculations
 
 //==================convert data from float to int==================
-pressure_val = current_mA*100;
+//pressure_val = current_mA*100;
 
 //==================convert current from sensor to actual pressure value, !!!MUST BE CALIBRATED!!!==================
-pressure_actual = map(pressure_val, 0, 3000, 0, 250);
+//pressure_actual = map(pressure_val, 0, 3000, 0, 250);
 
 //==================read values of axis==================
 axis_1_val = analogRead(axis_1);
@@ -232,7 +232,7 @@ if (axis_1_down == true && lock_1 == false){digitalWrite(up_state, LOW), digital
 if (axis_2_down == true && lock_2 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(out_power_2, axis_2_out);}
 if (axis_fingers_open == true && lock_3 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(out_power_fingers, axis_fingers_out);}
 
-tm1637.displayInt(pressure_actual);
+//tm1637.displayInt(pressure_actual);
 
 //serial debugging
 //output data on axis 1
@@ -254,10 +254,10 @@ Serial.print(" AFU: "); Serial.print(axis_fingers_close);
 Serial.print(" AFD: "); Serial.print(axis_fingers_open);
 Serial.print(" AFLock: "); Serial.print(lock_3);
 
-Serial.print(" Current[mA]:"); Serial.print(current_mA); //print current read from INA module
+//Serial.print(" Current[mA]:"); Serial.print(current_mA); //print current read from INA module
 
-Serial.print(" Pressure val:"); Serial.print(pressure_val);
-Serial.print(" Pressure actual:"); Serial.print(pressure_actual);
+//Serial.print(" Pressure val:"); Serial.print(pressure_val);
+//Serial.print(" Pressure actual:"); Serial.print(pressure_actual);
 
 Serial.println("  ");
 
