@@ -7,7 +7,10 @@
 */
 
 //==================ДОБАВЛЕНИЕ НУЖНЫХ БИБЛИОТЕК==================
+//>>>УДАЛИТЬ (ИЛИ ЗАКОММЕНТИРОВАТЬ //) СЛЕДУЮЩУЮ 1 СТРОКУ ПРИ ОБРАБОТКЕ ВНЕ СРЕДЫ VSCode Platformio<<<
 #include <Arduino.h> //библиотека Arduino для использования в VSCode PlatformIO (НЕ НУЖНА ЕСЛИ ПИСАТЬ И/ИЛИ ПРОШИВАТЬ ИЗ ARDUINO IDE!!!)
+//>>>УДАЛИТЬ (ИЛИ ЗАКОММЕНТИРОВАТЬ //) ПРЕДЫДУЩУЮ 1 СТРОКУ ПРИ ОБРАБОТКЕ ВНЕ СРЕДЫ VSCode Platformio<<<
+
 #include <Wire.h> //библиотека I2C
 #include <INA219_WE.h> //библиотека INA автора Wolfgang Ewald
 #include <TM1637.h> //библиотека TM1637 с жёсткогого диска, находится в папке .pio (можно скачать так же с (https://drive.google.com/file/d/1DN5pDko7D1-F4POXICIfd8m_1sAKBZt7/view)
@@ -39,39 +42,39 @@ int display_clk = 12; //CLK пин модуля TM1637
 int display_dio = 13; //DIO пин модуля TM1637
 
 //==================ПЕРЕМЕННЫЕ==================
-float current_mA = 0.0; //float variable for reading current from the INA module
+float current_mA = 0.0; //float для считывания данных с модуля INA219
 
-bool axis_1_neutral = true; //flag for axis 1 being in neutral state
-bool axis_1_up = true; //flag for axis 1 being in UP state
-bool axis_1_down = true; //flag for axis 1 being in DOWN state
+bool axis_1_neutral = true; //флаг нейтрали оси 1
+bool axis_1_up = true; //флаг ВВЕРХ оси 1
+bool axis_1_down = true; //флаг ВНИЗ оси 1
 
-bool axis_2_neutral = true; //flag for axis 1 being in neutral state
-bool axis_2_up = true; //flag for axis 2 being in UP state
-bool axis_2_down = true; //flag for axis 2 being in DOWN state
+bool axis_2_neutral = true; //флаг нейтрали оси 2
+bool axis_2_up = true; //флаг ВВЕРХ оси 2
+bool axis_2_down = true; //флаг ВНИЗ оси 2
 
-bool axis_fingers_neutral = true; //flag for axis 1 being in neutral state
-bool axis_fingers_close = true; //flag for axis 1 being in UP state
-bool axis_fingers_open = true; //flag for axis 1 being in DOWN state
+bool axis_fingers_neutral = true; //флаг нейтрали оси "пальцы"
+bool axis_fingers_close = true; //флаг ВВЕРХ (ЗАКРЫТЬ) оси "пальцы"
+bool axis_fingers_open = true; //флаг ВНИЗ (ОТКРЫТЬ) оси "пальцы"
 
-bool lock_1 = false; //flag for locking out axis 1
-bool lock_2 = false; //flag for locking out axis 2
-bool lock_3 = false; //flag for locking out fingers axis
+bool lock_1 = false; //флаг блокировки оси 1
+bool lock_2 = false; //флаг блокировки оси 2
+bool lock_3 = false; //флаг блокировки оси "пальцы"
 
-int neutral_switch_1_state = 0; //neutral button 1 state
-int neutral_switch_2_state = 0; //neutral button 2 state
-int neutral_switch_3_state = 0; //neutral button 3 state
+int neutral_switch_1_state = 0; //состояние концевика оси 1
+int neutral_switch_2_state = 0; //состояние концевика оси 2
+int neutral_switch_3_state = 0; //состояние концевика оси "пальцы"
 
-int pressure_val = 0; //mapped value from the INA219 module from FLOAT to INT
-int pressure_actual = 0; //mapped actual pressure in bar (atmospheres)
+int pressure_val = 0; //переформатированное значение float с модуля INA219 в int для последующей обработки
+int pressure_actual = 0; //фактическое давление в bar (атмосфер)
 
-int axis_1_val = 0; //for storing raw input value from the joystick
-int axis_1_out = 0; //for storing output value mapped to appropriate PWM output
+int axis_1_val = 0; //сырое значение состояния оси 1
+int axis_1_out = 0; //переформатированное значение оси 1 для вывода ШИМ
 
-int axis_2_val = 0; //for storing raw input value from the joystick
-int axis_2_out = 0; //for storing output value mapped to appropriate PWM output
+int axis_2_val = 0; //сырое значение состояния оси 2
+int axis_2_out = 0; //переформатированное значение оси 2 для вывода ШИМ
 
-int axis_fingers_val = 0; //for storing raw input value from the joystick
-int axis_fingers_out = 0; //for storing output value mapped to appropriate PWM output
+int axis_fingers_val = 0; //сырое значение состояния оси "пальцы"
+int axis_fingers_out = 0; //переформатированное значение оси "пальцы" для вывода ШИМ
 
 //==================СОЗДАНИЕ ОБЪЕКТОВ БИБЛИОТЕК==================
 INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE, инициализация датчика давления
