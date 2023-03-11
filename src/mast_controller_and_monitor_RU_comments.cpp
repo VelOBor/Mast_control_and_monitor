@@ -74,8 +74,8 @@ int axis_fingers_val = 0; //for storing raw input value from the joystick
 int axis_fingers_out = 0; //for storing output value mapped to appropriate PWM output
 
 //==================СОЗДАНИЕ ОБЪЕКТОВ БИБЛИОТЕК==================
-INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE
-TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637
+INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE, инициализация датчика давления
+TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637, инициализация дисплея
 
 //==================НАСТРОЙКИ, выполняется разово при включении МК==================
 void setup() {
@@ -100,15 +100,13 @@ pinMode(neutral_switch_2, INPUT_PULLUP); //концевик нейтрали в�
 pinMode(axis_fingers, INPUT); //ось "пальцы", потенциометр, вход
 pinMode(neutral_switch_3, INPUT_PULLUP); //концевик нейтрали оси "пальцы", !!!РАЗОМКНУТ КОНЦЕВИК == НЕЙТРАЛЬНОЕ ПОЛОЖЕНИЕ!!!
 
-//pinMode(pressure_sensor, INPUT); //легаси, удалить после завершения написания и проверки и перепроверки работоспособности системы
-
 //определения режимов работы пинов выходов
 pinMode(up_state, OUTPUT); //выход на реле ВВЕРХ
 pinMode(down_state, OUTPUT); //выход на реле ВНИЗ
 pinMode(display_clk, OUTPUT); //выход на пин CLK модуля tm1637
 pinMode(display_dio, OUTPUT); // выход на пин DIO модуля tm1637
 
-//сброс статуса блокировки на ЛОЖЬ для всех трёх осей, скорее всего удалить строку когда будут использоваться концевики
+//сброс статуса блокировки на ЛОЖЬ для всех трёх осей, скорее всего удалить строки когда будут использоваться концевики
 lock_1 = false; //блокировка оси 1
 lock_2 = false; //блокировка оси 2
 lock_3 = false; //блокировка оси "пальцы"
@@ -122,104 +120,92 @@ lock_3 = false; //блокировка оси "пальцы"
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
 
-tm1637.clearDisplay(); //clear the display to avoid stuck readings
+tm1637.clearDisplay(); //очистка дисплея
 
-//==================set flags==================
-if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //lock axis if EITHER of two other axes are NOT neutral
-if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //unlock if BOTH other axes are neutral
+//==================УСТАНОВКА ФЛАЖКОВ БЛОКИРОВКИ==================
+if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
 
-if (axis_1_neutral == false || axis_fingers_neutral == false){lock_2 = true;} //lock axis if EITHER of two other axes are NOT neutral
-if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //unlock if BOTH other axes are neutral
+if (axis_1_neutral == false || axis_fingers_neutral == false){lock_2 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
 
-if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //lock axis if EITHER of two other axes are NOT neutral
-if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //unlock if BOTH other axes are neutral
+if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
 
-if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);}
-if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);}
-if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);}
+if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);} //выключение вывода ШИМ если ось в нейтрали
+if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);} //выключение вывода ШИМ если ось в нейтрали
+if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);} //выключение вывода ШИМ если ось в нейтрали
 
 
-//==================get raw data from the pressure sensor==================
-current_mA = ina219.getCurrent_mA(); //read current from the INA module
-current_mA = constrain (current_mA, 0, 30); //limit the value IN SOFTWARE from 0 to 30mA for ease of calculations
+//==================ПОЛУЧЕНИЕ СЫРЫХ ДАННЫХ С ДАТЧИКА ДАВЛЕНИЯ==================
+current_mA = ina219.getCurrent_mA(); //получение значения тока на модуде INA219
+current_mA = constrain (current_mA, 0, 30); //ПРОГРАММНОЕ ограничение значения тока от 0 до 30мА для упрощения расчётов
 
-//==================convert data from float to int==================
-pressure_val = current_mA*100;
+//==================КОНВЕРТИРОВАНИЕ ДАННЫХ С ФОРМАТА float В ФОРМАТ int==================
+pressure_val = current_mA*100; //значение *100 возомжно поможет с мерцанием последнего значения на дисплее...
 
-//==================convert current from sensor to actual pressure value, !!!MUST BE CALIBRATED!!!==================
+//==================КОНВЕРТИРОВАНИЕ СЫРЫХ ДАННЫХ В ФАКТИЧЕСКОЕ ДАВЛЕНИЕ ДЛЯ ВЫВОДА НА ДИСПЛЕЙ >>>!!!ОБЯЗАТЕЛЬНО ОТКАЛИБРОВАТЬ!!!<<<==================
 pressure_actual = map(pressure_val, 0, 3000, 0, 250);
 
-//==================read values of axis==================
+//==================СЧИТЫВАНИЕ ОСЕЙ==================
 axis_1_val = analogRead(axis_1);
 axis_2_val = analogRead(axis_2);
 axis_fingers_val = analogRead(axis_fingers);
 
-//==================read neutral switches==================
+//==================СЧИТЫВАНИЕ КОНЦЕВИКОВ==================
 neutral_switch_1_state = digitalRead(neutral_switch_1);
 neutral_switch_2_state = digitalRead(neutral_switch_2);
 neutral_switch_3_state = digitalRead(neutral_switch_3);
 
-
-//==================read pressure sensor==================
-//==================LEGACY, OBSOLETE==================
-//pressure_val = analogRead(pressure_sensor);
-//pressure_actual = map(pressure_val, 0, 1023, 0, 255);
-
-//==================process and map axis 1==================
+//==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 1==================
 
     if (axis_1_val >= 522){
         axis_1_out = map(axis_1_val, 522, 1023, 0, 255);
-        //axis_1_neutral = false;
         axis_1_up = true;
         axis_1_down = false;
         }
         
     if (axis_1_val <= 502){
         axis_1_out = map(axis_1_val, 0, 502, 255, 0);
-        //axis_1_neutral = false;
         axis_1_up = false;
         axis_1_down = true;
         }
-    if (axis_1_val > 502 && axis_1_val <= 522){/*axis_1_neutral = true, */axis_1_up = false, axis_1_down = false, axis_1_out = 0;
+    if (axis_1_val > 502 && axis_1_val <= 522){axis_1_up = false, axis_1_down = false, axis_1_out = 0;
     }    
 
-//==================process and map axis 2==================
+//==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 2==================
 
     if (axis_2_val >= 522){
         axis_2_out = map(axis_2_val, 522, 1023, 0, 255);
-        //axis_2_neutral = false;
         axis_2_up = true;
         axis_2_down = false;
         }
         
     if (axis_2_val <= 502){
         axis_2_out = map(axis_2_val, 0, 502, 255, 0);
-        //axis_2_neutral = false;
         axis_2_up = false;
         axis_2_down = true;
         }
-    if (axis_2_val > 502 && axis_2_val <= 522){/*axis_2_neutral = true, */axis_2_up = false, axis_2_down = false, axis_2_out = 0;
+    if (axis_2_val > 502 && axis_2_val <= 522){axis_2_up = false, axis_2_down = false, axis_2_out = 0;
     }
 
-//==================process and map axis fingers==================
+//==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ "пальцы"==================
 
     if (axis_fingers_val >= 522){
         axis_fingers_out = map(axis_fingers_val, 522, 1023, 0, 255);
-        //axis_fingers_neutral = false;
         axis_fingers_close = true;
         axis_fingers_open = false;
         }
         
     if (axis_fingers_val <= 502){
         axis_fingers_out = map(axis_fingers_val, 0, 502, 255, 0);
-        //axis_fingers_neutral = false;
         axis_fingers_close = false;
         axis_fingers_open = true;
         }
-    if (axis_fingers_val > 502 && axis_fingers_val <= 522){/*axis_fingers_neutral = true, */axis_fingers_close = false, axis_fingers_open = false, axis_fingers_out = 0;
+    if (axis_fingers_val > 502 && axis_fingers_val <= 522){axis_fingers_close = false, axis_fingers_open = false, axis_fingers_out = 0;
     }
 
-//activate appropriate status LED for up or down and output data to LED on PWM pins
+//ВКЛЮЧЕНИЕ СООТВЕТСТВУЮЩИХ РЕЛЕ И ШИМ ВЫХОДОВ
 if (axis_1_neutral == true && lock_1 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
 if (axis_2_neutral == true && lock_2 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
 if (axis_fingers_neutral == true && lock_3 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, LOW);}
@@ -232,33 +218,35 @@ if (axis_1_down == true && lock_1 == false){digitalWrite(up_state, LOW), digital
 if (axis_2_down == true && lock_2 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(out_power_2, axis_2_out);}
 if (axis_fingers_open == true && lock_3 == false){digitalWrite(up_state, LOW), digitalWrite(down_state, HIGH), analogWrite(out_power_fingers, axis_fingers_out);}
 
+//ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
 tm1637.displayInt(pressure_actual);
 
-//serial debugging
-//output data on axis 1
+//ВЫВОД ДАННЫХ НА ПОСЛЕДОВАТЕЛЬНЫЙ ПОРТ ДЛЯ ДЕБАГГИНГА, удалить после завершения написания и проверки и перепроверки работоспособности системы
+//данные оси 1
 Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
 Serial.print(" A1N:"); Serial.print(axis_1_neutral);
 Serial.print(" A1U:"); Serial.print(axis_1_up);
 Serial.print(" A1D:"); Serial.print(axis_1_down);
 Serial.print(" A1Lock:"); Serial.print(lock_1);
-//output data on axis 2
+//данные оси 2
 Serial.print(" A2V:"); Serial.print(axis_2_val); Serial.print(" A2O:"); Serial.print(axis_2_out);
 Serial.print(" A2N:"); Serial.print(axis_2_neutral);
 Serial.print(" A2U:"); Serial.print(axis_2_up);
 Serial.print(" A2D:"); Serial.print(axis_2_down);
 Serial.print(" A2Lock:"); Serial.print(lock_2);
-//output data on axis fingers
+//данные оси "пальцы"
 Serial.print(" FV:"); Serial.print(axis_fingers_val); Serial.print(" FO:"); Serial.print(axis_fingers_out);
 Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
 Serial.print(" AFU: "); Serial.print(axis_fingers_close);
 Serial.print(" AFD: "); Serial.print(axis_fingers_open);
 Serial.print(" AFLock: "); Serial.print(lock_3);
-
-Serial.print(" Current[mA]:"); Serial.print(current_mA); //print current read from INA module
-
+//ток на модуле INA219
+Serial.print(" Current[mA]:"); Serial.print(current_mA);
+//ток на модуле*100
 Serial.print(" Pressure val:"); Serial.print(pressure_val);
+//фактическое давление
 Serial.print(" Pressure actual:"); Serial.print(pressure_actual);
-
+//пустая строчка, перенос каретки
 Serial.println("  ");
 
 }
