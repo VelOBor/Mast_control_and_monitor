@@ -129,21 +129,6 @@ void loop() {
 
 currentmillis = millis(); //записать текущее время с последней перезагрузки
 
-//==================УСТАНОВКА ФЛАЖКОВ БЛОКИРОВКИ==================
-if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
-if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
-
-if (axis_1_neutral == false || axis_fingers_neutral == false){lock_2 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
-if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
-
-if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
-if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
-
-if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);} //выключение вывода ШИМ если ось в нейтрали
-if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);} //выключение вывода ШИМ если ось в нейтрали
-if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);} //выключение вывода ШИМ если ось в нейтрали
-
-
 //==================ПОЛУЧЕНИЕ СЫРЫХ ДАННЫХ С ДАТЧИКА ДАВЛЕНИЯ==================
 current_mA = ina219.getCurrent_mA(); //получение значения тока на модуде INA219
 current_mA = constrain (current_mA, 0.5, 30); //ПРОГРАММНОЕ ограничение значения тока от 0.5мА до 30мА для упрощения расчётов
@@ -163,6 +148,30 @@ axis_fingers_val = analogRead(axis_fingers);
 neutral_switch_1_state = digitalRead(neutral_switch_1);
 neutral_switch_2_state = digitalRead(neutral_switch_2);
 neutral_switch_3_state = digitalRead(neutral_switch_3);
+
+//==================УСТАНОВКА ФЛАЖКОВ БЛОКИРОВКИ==================
+
+if (neutral_switch_1_state == 1){axis_1_neutral = true;}
+else {axis_1_neutral = false;}
+if (neutral_switch_2_state == 1){axis_2_neutral = true;}
+else {axis_2_neutral = false;}
+if (neutral_switch_3_state == 1){axis_fingers_neutral = true;}
+else {axis_fingers_neutral = false;}
+
+/*
+if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
+
+if (axis_1_neutral == false || axis_fingers_neutral == false){lock_2 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
+
+if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
+if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
+
+if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);} //выключение вывода ШИМ если ось в нейтрали
+if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);} //выключение вывода ШИМ если ось в нейтрали
+if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);} //выключение вывода ШИМ если ось в нейтрали
+*/
 
 //==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 1==================
 
@@ -231,6 +240,8 @@ if (axis_fingers_open == true && lock_3 == false){digitalWrite(up_state, LOW), d
         tm1637.displayInt(pressure_actual); //...вывести значение на дисплей...
         previousmillis = currentmillis; //...и обновить таймер
     }
+
+
 //ВЫВОД ДАННЫХ НА ПОСЛЕДОВАТЕЛЬНЫЙ ПОРТ ДЛЯ ДЕБАГГИНГА, удалить после завершения написания и проверки и перепроверки работоспособности системы
 //данные оси 1
 Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
