@@ -126,6 +126,10 @@ lock_3 = false; //блокировка оси "пальцы"
 
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
+//выключить ШИМ выход если ось в нейтрали
+if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);}
+if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);}
+if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);}
 
 currentmillis = millis(); //записать текущее время с последней перезагрузки
 
@@ -158,7 +162,7 @@ else {axis_2_neutral = false;}
 if (neutral_switch_3_state == 1){axis_fingers_neutral = true;}
 else {axis_fingers_neutral = false;}
 
-/*
+//==================БЛОКИРОВКА ОСЕЙ ПО ФЛАЖКАМ==================
 if (axis_2_neutral == false || axis_fingers_neutral == false){lock_1 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
 if (axis_2_neutral == true && axis_fingers_neutral == true){lock_1 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
 
@@ -171,7 +175,7 @@ if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //раз�
 if (axis_1_neutral == true){digitalWrite(out_power_1, LOW);} //выключение вывода ШИМ если ось в нейтрали
 if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);} //выключение вывода ШИМ если ось в нейтрали
 if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);} //выключение вывода ШИМ если ось в нейтрали
-*/
+
 
 //==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 1==================
 
