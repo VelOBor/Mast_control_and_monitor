@@ -80,13 +80,17 @@ unsigned long previousmillis = 0; //когда было последнее об�
 unsigned long currentmillis = 0; //текущее время в миллисекундах
 const long interval = 100; //интервал между обновлениями дисплея в миллисекундах
 
+//Флажки ошибок по току
+bool open_circuit = false; //обрыв цепи
+bool short_circuit = false; //короткое замыкание
+
 //==================СОЗДАНИЕ ОБЪЕКТОВ БИБЛИОТЕК==================
 INA219_WE ina219 = INA219_WE(I2C_ADDRESS); //создание объекта "ina219" библиотеки INA219_WE, инициализация датчика давления
 TM1637 tm1637(display_clk, display_dio); //создание объекта "tm1637" библиотеки TM1637, инициализация дисплея
 
 //==================НАСТРОЙКИ, выполняется разово при включении МК==================
 void setup() {
-Serial.begin(115200); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
+Serial.begin(9600); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
 Wire.begin(); //инициализуруем интерфейс I2C
 
 //===удалить последующие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
@@ -118,11 +122,26 @@ lock_1 = false; //блокировка оси 1
 lock_2 = false; //блокировка оси 2
 lock_3 = false; //блокировка оси "пальцы"
 
+//проверка работоспособности модуля ТМ путём вывода символов "_OC_" (open circuit, обрыв цепи), "_SC_" (short circuit, короткое замыкани) на 0.5 сек каждое, "DONE" и пауза на 2 секунды
+tm1637.displayByte(_dash, _O, _C, _dash);
+delay(500);
+
+tm1637.displayByte(_dash, _S, _C, _dash);
+delay(500);
+
+tm1637.displayByte(_D, _O, _N, _E);
+delay(2000);
 }
 
 
 //ЗАМЕТКА - центральное положение джойстиков 512, добавить гистерезис +-10, скорректировать после подключения фактических джойстиков
 //ЗАМЕТКА - нажатие джойстиков ВВЕРХ активирует реле "ВВЕРХ", а на оси "пальцы" выполняет "ЗАКРЫТИЕ", возможна корректировка логики работы после подключения фактических джойстиков
+//Axis 1 center 504 (493) +-, max 737, min 256
+//Axis 2 center 510 +-, max 765, min 256
+//Axis 3 center 510 +-, max 764, min 256
+//Axis 1 center - switch is 1, goes to 0 at 510-512 moving up, 410 moving down
+//Axis 2 center - switch is 1, goes to 0 at 546 moving up, 452 moving down
+//Axis 3 center - switch is 1, goes to 0 at 542 moving up, 461 moving down
 
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
@@ -136,6 +155,8 @@ currentmillis = millis(); //записать текущее время с пос
 //==================ПОЛУЧЕНИЕ СЫРЫХ ДАННЫХ С ДАТЧИКА ДАВЛЕНИЯ==================
 current_mA = ina219.getCurrent_mA(); //получение значения тока на модуде INA219
 current_mA = constrain (current_mA, 0.5, 30); //ПРОГРАММНОЕ ограничение значения тока от 0.5мА до 30мА для упрощения расчётов
+if (current_mA <= 5){open_circuit = true;} //при значении ниже заданного, ставим флажок "ИСТИНА" на "обрыв цепи"
+if (current_mA >= 25){short_circuit = true;} //при значении выше заданного, ставим флажок "ИСТИНА" на "короткое замыкание"
 
 //==================КОНВЕРТИРОВАНИЕ ДАННЫХ С ФОРМАТА float В ФОРМАТ int==================
 pressure_val = current_mA*100;
@@ -144,10 +165,13 @@ pressure_val = current_mA*100;
 pressure_actual = map(pressure_val, 50, 3000, 0, 250);
 
 //==================СЧИТЫВАНИЕ ОСЕЙ==================
-axis_1_val = analogRead(axis_1);
-axis_2_val = analogRead(axis_2);
-axis_fingers_val = analogRead(axis_fingers);
-
+//проверяем состояние концевиков и если они не замкнуты, то считываем значения джойстиков
+if (axis_1_neutral == false){axis_1_val = analogRead(axis_1);}
+    else {axis_1_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
+if (axis_2_neutral == false){axis_2_val = analogRead(axis_2);}
+    else {axis_1_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
+if (axis_fingers_neutral == false){axis_fingers_val = analogRead(axis_fingers);}
+    else {axis_fingers_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
 //==================СЧИТЫВАНИЕ КОНЦЕВИКОВ==================
 neutral_switch_1_state = digitalRead(neutral_switch_1);
 neutral_switch_2_state = digitalRead(neutral_switch_2);
@@ -177,52 +201,58 @@ if (axis_2_neutral == true){digitalWrite(out_power_2, LOW);} //выключен�
 if (axis_fingers_neutral == true){digitalWrite(out_power_fingers, LOW);} //выключение вывода ШИМ если ось в нейтрали
 
 
+
+
+//Axis 1 center - switch is 1, goes to 0 at 510-512 moving up, 410 moving down
+//Axis 2 center - switch is 1, goes to 0 at 546 moving up, 452 moving down
+//Axis 3 center - switch is 1, goes to 0 at 542 moving up, 461 moving down
+
 //==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 1==================
 
-    if (axis_1_val >= 522){
-        axis_1_out = map(axis_1_val, 522, 1023, 0, 255);
+    if (axis_1_val >= 517){
+        axis_1_out = map(axis_1_val, 517, 737, 0, 255);
         axis_1_up = true;
         axis_1_down = false;
         }
         
-    if (axis_1_val <= 502){
-        axis_1_out = map(axis_1_val, 0, 502, 255, 0);
+    if (axis_1_val <= 476){
+        axis_1_out = map(axis_1_val, 256, 476, 255, 0);
         axis_1_up = false;
         axis_1_down = true;
         }
-    if (axis_1_val > 502 && axis_1_val <= 522){axis_1_up = false, axis_1_down = false, axis_1_out = 0;
+    if (axis_1_val > 476 && axis_1_val <= 517){axis_1_up = false, axis_1_down = false, axis_1_out = 0;
     }    
 
 //==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ 2==================
 
-    if (axis_2_val >= 522){
-        axis_2_out = map(axis_2_val, 522, 1023, 0, 255);
+    if (axis_2_val >= 520){
+        axis_2_out = map(axis_2_val, 520, 765, 0, 255);
         axis_2_up = true;
         axis_2_down = false;
         }
         
-    if (axis_2_val <= 502){
-        axis_2_out = map(axis_2_val, 0, 502, 255, 0);
+    if (axis_2_val <= 480){
+        axis_2_out = map(axis_2_val, 256, 480, 255, 0);
         axis_2_up = false;
         axis_2_down = true;
         }
-    if (axis_2_val > 502 && axis_2_val <= 522){axis_2_up = false, axis_2_down = false, axis_2_out = 0;
+    if (axis_2_val > 480 && axis_2_val <= 520){axis_2_up = false, axis_2_down = false, axis_2_out = 0;
     }
 
 //==================ОБРАБОТКА ЗНАЧЕНИЙ ОСИ "пальцы"==================
 
-    if (axis_fingers_val >= 522){
-        axis_fingers_out = map(axis_fingers_val, 522, 1023, 0, 255);
+    if (axis_fingers_val >= 520){
+        axis_fingers_out = map(axis_fingers_val, 520, 765, 0, 255);
         axis_fingers_close = true;
         axis_fingers_open = false;
         }
         
-    if (axis_fingers_val <= 502){
-        axis_fingers_out = map(axis_fingers_val, 0, 502, 255, 0);
+    if (axis_fingers_val <= 480){
+        axis_fingers_out = map(axis_fingers_val, 256, 480, 255, 0);
         axis_fingers_close = false;
         axis_fingers_open = true;
         }
-    if (axis_fingers_val > 502 && axis_fingers_val <= 522){axis_fingers_close = false, axis_fingers_open = false, axis_fingers_out = 0;
+    if (axis_fingers_val > 480 && axis_fingers_val <= 520){axis_fingers_close = false, axis_fingers_open = false, axis_fingers_out = 0;
     }
 
 //ВКЛЮЧЕНИЕ СООТВЕТСТВУЮЩИХ РЕЛЕ И ШИМ ВЫХОДОВ
@@ -240,16 +270,35 @@ if (axis_fingers_open == true && lock_3 == false){digitalWrite(up_state, LOW), d
 
 //ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
     if (currentmillis - previousmillis >= interval) { //если прошло больше времени чем интервал...
+        if (open_circuit == true || short_circuit == true) //если "обрыв цепи" ИЛИ "короткое замыкание"...
+        {
+            if (open_circuit == true) //если "обрыв цепи" ИСТИНА
+            {
+            tm1637.clearDisplay(); //...то очистить дисплей...
+            tm1637.displayByte(_dash, _O, _C, _dash); //...вывести "_OC_" на дисплей...
+            previousmillis = currentmillis; //...и обновить таймер
+            }
+            else if (short_circuit == true) //иначе если "короткое замыкание" ИСТИНА
+            {
+            tm1637.clearDisplay(); //...то очистить дисплей...
+            tm1637.displayByte(_dash, _S, _C, _dash); //...вывести "_SC_" на дисплей...
+            previousmillis = currentmillis; //...и обновить таймер    
+            }    
+        }        
+        
+        else
+        {
         tm1637.clearDisplay(); //...то очистить дисплей...
         tm1637.displayInt(pressure_actual); //...вывести значение на дисплей...
         previousmillis = currentmillis; //...и обновить таймер
+        }
     }
 
 
 //ВЫВОД ДАННЫХ НА ПОСЛЕДОВАТЕЛЬНЫЙ ПОРТ ДЛЯ ДЕБАГГИНГА, удалить после завершения написания и проверки и перепроверки работоспособности системы
 //данные оси 1
 Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
-Serial.print(" A1N:"); Serial.print(axis_1_neutral);
+//Serial.print(" A1N:"); Serial.print(axis_1_neutral);
 Serial.print(" A1U:"); Serial.print(axis_1_up);
 Serial.print(" A1D:"); Serial.print(axis_1_down);
 Serial.print(" A1Lock:"); Serial.print(lock_1);
@@ -261,7 +310,7 @@ Serial.print(" A2D:"); Serial.print(axis_2_down);
 Serial.print(" A2Lock:"); Serial.print(lock_2);
 //данные оси "пальцы"
 Serial.print(" FV:"); Serial.print(axis_fingers_val); Serial.print(" FO:"); Serial.print(axis_fingers_out);
-Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
+//Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
 Serial.print(" AFU: "); Serial.print(axis_fingers_close);
 Serial.print(" AFD: "); Serial.print(axis_fingers_open);
 Serial.print(" AFLock: "); Serial.print(lock_3);
