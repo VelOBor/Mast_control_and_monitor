@@ -124,13 +124,13 @@ lock_3 = false; //блокировка оси "пальцы"
 
 //проверка работоспособности модуля ТМ путём вывода символов "_OC_" (open circuit, обрыв цепи), "_SC_" (short circuit, короткое замыкани) на 0.5 сек каждое, "DONE" и пауза на 2 секунды
 tm1637.displayByte(_dash, _O, _C, _dash);
-delay(1500);
+delay(500);
 
 tm1637.displayByte(_dash, _S, _C, _dash);
-delay(1500);
+delay(500);
 
 tm1637.displayByte(_D, _O, _N, _E);
-delay(3000);
+delay(2000);
 }
 
 
@@ -155,21 +155,21 @@ currentmillis = millis(); //записать текущее время с пос
 //==================ПОЛУЧЕНИЕ СЫРЫХ ДАННЫХ С ДАТЧИКА ДАВЛЕНИЯ==================
 current_mA = ina219.getCurrent_mA(); //получение значения тока на модуде INA219
 current_mA = constrain (current_mA, 0.5, 30); //ПРОГРАММНОЕ ограничение значения тока от 0.5мА до 30мА для упрощения расчётов
-if (current_mA < 0.5){open_circuit = true;} //при значении ниже заданного, ставим флажок "ИСТИНА" на "обрыв цепи"
-if (current_mA > 20){short_circuit = true;} //при значении выше заданного, ставим флажок "ИСТИНА" на "короткое замыкание"
+if (current_mA <= 5){open_circuit = true;} //при значении ниже заданного, ставим флажок "ИСТИНА" на "обрыв цепи"
+if (current_mA >= 25){short_circuit = true;} //при значении выше заданного, ставим флажок "ИСТИНА" на "короткое замыкание"
 
 //==================КОНВЕРТИРОВАНИЕ ДАННЫХ С ФОРМАТА float В ФОРМАТ int==================
 pressure_val = current_mA*100;
 
 //==================КОНВЕРТИРОВАНИЕ СЫРЫХ ДАННЫХ В ФАКТИЧЕСКОЕ ДАВЛЕНИЕ ДЛЯ ВЫВОДА НА ДИСПЛЕЙ >>>!!!ОБЯЗАТЕЛЬНО ОТКАЛИБРОВАТЬ!!!<<<==================
-pressure_actual = map(pressure_val, 400, 2000, 0, 250);
+pressure_actual = map(pressure_val, 50, 3000, 0, 250);
 
 //==================СЧИТЫВАНИЕ ОСЕЙ==================
 //проверяем состояние концевиков и если они не замкнуты, то считываем значения джойстиков
 if (axis_1_neutral == false){axis_1_val = analogRead(axis_1);}
     else {axis_1_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
 if (axis_2_neutral == false){axis_2_val = analogRead(axis_2);}
-    else {axis_2_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
+    else {axis_1_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
 if (axis_fingers_neutral == false){axis_fingers_val = analogRead(axis_fingers);}
     else {axis_fingers_val = 500;} //примерно нейтральное положение оси, значение потенциометра если джойстик не отклонён от центра
 //==================СЧИТЫВАНИЕ КОНЦЕВИКОВ==================
@@ -298,7 +298,7 @@ if (axis_fingers_open == true && lock_3 == false){digitalWrite(up_state, LOW), d
 //ВЫВОД ДАННЫХ НА ПОСЛЕДОВАТЕЛЬНЫЙ ПОРТ ДЛЯ ДЕБАГГИНГА, удалить после завершения написания и проверки и перепроверки работоспособности системы
 //данные оси 1
 Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
-Serial.print(" A1N:"); Serial.print(axis_1_neutral);
+//Serial.print(" A1N:"); Serial.print(axis_1_neutral);
 Serial.print(" A1U:"); Serial.print(axis_1_up);
 Serial.print(" A1D:"); Serial.print(axis_1_down);
 Serial.print(" A1Lock:"); Serial.print(lock_1);
@@ -310,7 +310,7 @@ Serial.print(" A2D:"); Serial.print(axis_2_down);
 Serial.print(" A2Lock:"); Serial.print(lock_2);
 //данные оси "пальцы"
 Serial.print(" FV:"); Serial.print(axis_fingers_val); Serial.print(" FO:"); Serial.print(axis_fingers_out);
-Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
+//Serial.print(" AFN: "); Serial.print(axis_fingers_neutral);
 Serial.print(" AFU: "); Serial.print(axis_fingers_close);
 Serial.print(" AFD: "); Serial.print(axis_fingers_open);
 Serial.print(" AFLock: "); Serial.print(lock_3);
