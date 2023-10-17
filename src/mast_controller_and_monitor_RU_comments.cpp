@@ -399,6 +399,8 @@ delay(3000);
 
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
+
+tm1637.clearDisplay(); //очистить дисплей
 //выключить ШИМ выход и разомкнуть все реле если ось в нейтрали
 if (axis_1_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);}
 if (axis_2_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);}
