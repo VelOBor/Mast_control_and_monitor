@@ -384,7 +384,14 @@ tm1637.displayByte(_r, _E, _d, _Y);
 delay(3000);
 
 //конец проверки напряжения на клапанах
-
+//размыкание всех реле
+digitalWrite(test_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(mast1_up_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(mast1_down_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(mast2_up_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(mast2_down_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(fingers_open_relay, HIGH); //установить состояние пинов в высокий логический уровень
+digitalWrite(fingers_close_relay, HIGH); //установить состояние пинов в высокий логический уровень
 }
 
 
