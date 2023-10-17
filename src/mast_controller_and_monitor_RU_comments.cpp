@@ -195,8 +195,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _1, _dash); //отображаем U1 на дисплее, напряжение на клапане 1
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast1_up_relay, HIGH); //замыкаем реле клапана 1
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(mast1_up_relay, LOW); //замыкаем реле клапана 1
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -215,8 +215,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _1, _o, _n); //выводим на дисплей "клапан 1 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast1_up_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(mast1_up_relay, HIGH);
 //конец проверки клапана 1
 
 //клапан 2
@@ -225,8 +225,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _2, _dash); //отображаем U2 на дисплее, напряжение на клапане 2
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast1_down_relay, HIGH); //замыкаем реле клапана 2
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(mast1_down_relay, LOW); //замыкаем реле клапана 2
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -245,8 +245,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _2, _o, _n); //выводим на дисплей "клапан 2 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast1_down_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(mast1_down_relay, HIGH);
 //конец проверки клапана 2
 
 //клапан 3
@@ -255,8 +255,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _3, _dash); //отображаем U3 на дисплее, напряжение на клапане 3
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast2_up_relay, HIGH); //замыкаем реле клапана 3
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(mast2_up_relay, LOW); //замыкаем реле клапана 3
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -275,8 +275,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _3, _o, _n); //выводим на дисплей "клапан 3 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast2_up_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(mast2_up_relay, HIGH);
 //конец проверки клапана 3
 
 //клапан 4
@@ -285,8 +285,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _4, _dash); //отображаем U4 на дисплее, напряжение на клапане 4
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast2_down_relay, HIGH); //замыкаем реле клапана 4
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(mast2_down_relay, LOW); //замыкаем реле клапана 4
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -305,8 +305,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _4, _o, _n); //выводим на дисплей "клапан 4 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast2_down_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(mast2_down_relay, HIGH);
 //конец проверки клапана 4
 
 //клапан 5
@@ -315,8 +315,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _5, _dash); //отображаем U5 на дисплее, напряжение на клапане 5
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(fingers_open_relay, HIGH); //замыкаем реле клапана 5
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(fingers_open_relay, LOW); //замыкаем реле клапана 5
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -335,8 +335,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _5, _o, _n); //выводим на дисплей "клапан 5 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(fingers_open_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(fingers_open_relay, HIGH);
 //конец проверки клапана 5
 
 //клапан 6
@@ -345,8 +345,8 @@ delay(500); //пауза на 0.5 секунд
 tm1637.displayByte(_dash, _U, _6, _dash); //отображаем U6 на дисплее, напряжение на клапане 6
 delay(500); //пауза на 0.5 секунд
 
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(fingers_close_relay, HIGH); //замыкаем реле клапана 6
+digitalWrite(test_relay, LOW); //замыкаем тестовое реле
+digitalWrite(fingers_close_relay, LOW); //замыкаем реле клапана 6
 delay(100); //пауза 0.1 секунд
 
 valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
@@ -365,8 +365,8 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
         tm1637.displayByte(_U, _6, _o, _n); //выводим на дисплей "клапан 6 включен"
         delay(500); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(fingers_close_relay, LOW);
+digitalWrite(test_relay, HIGH);
+digitalWrite(fingers_close_relay, HIGH);
 //конец проверки клапана 6
 
 analogReference(DEFAULT);
@@ -400,9 +400,9 @@ delay(3000);
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
 //выключить ШИМ выход и разомкнуть все реле если ось в нейтрали
-if (axis_1_neutral == true){digitalWrite(output_power, LOW);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, LOW);}
-if (axis_2_neutral == true){digitalWrite(output_power, LOW);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, LOW);}
-if (axis_fingers_neutral == true){digitalWrite(output_power, LOW);;digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, LOW);}
+if (axis_1_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);}
+if (axis_2_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);}
+if (axis_fingers_neutral == true){digitalWrite(output_power, HIGH);;digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, HIGH);}
 
 
 currentmillis = millis(); //записать текущее время с последней перезагрузки
@@ -462,9 +462,9 @@ if (axis_1_neutral == true && axis_fingers_neutral == true){lock_2 = false;} //�
 if (axis_1_neutral == false || axis_2_neutral == false){lock_3 = true;} //блокировка оси если ЛЮБАЯ из двух остальных осей НЕ в нейтрали
 if (axis_1_neutral == true && axis_2_neutral == true){lock_3 = false;} //разблокировка оси если ОБЕ остальные оси в нейтрали
 
-if (axis_1_neutral == true){digitalWrite(output_power, LOW);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, LOW);} //выключение вывода ШИМ и реле если ось в нейтрали
-if (axis_2_neutral == true){digitalWrite(output_power, LOW);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, LOW);} //выключение вывода ШИМ и реле если ось в нейтрали
-if (axis_fingers_neutral == true){digitalWrite(output_power, LOW);;digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, LOW);} //выключение вывода ШИМ и реле если ось в нейтрали
+if (axis_1_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);} //выключение вывода ШИМ и реле если ось в нейтрали
+if (axis_2_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);} //выключение вывода ШИМ и реле если ось в нейтрали
+if (axis_fingers_neutral == true){digitalWrite(output_power, HIGH);;digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, HIGH);} //выключение вывода ШИМ и реле если ось в нейтрали
 
 
 
@@ -522,17 +522,17 @@ if (axis_fingers_neutral == true){digitalWrite(output_power, LOW);;digitalWrite(
     }
 
 //ВКЛЮЧЕНИЕ СООТВЕТСТВУЮЩИХ РЕЛЕ И ШИМ ВЫХОДОВ
-if (axis_1_neutral == true && lock_1 == false){digitalWrite(output_power, LOW);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, LOW);}
-if (axis_2_neutral == true && lock_2 == false){digitalWrite(output_power, LOW);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, LOW);}
-if (axis_fingers_neutral == true && lock_3 == false){digitalWrite(output_power, LOW);digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, LOW);}
+if (axis_1_neutral == true && lock_1 == false){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);}
+if (axis_2_neutral == true && lock_2 == false){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);}
+if (axis_fingers_neutral == true && lock_3 == false){digitalWrite(output_power, HIGH);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, HIGH);}
 
-if (axis_1_up == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, LOW);}
-if (axis_2_up == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, LOW);}
-if (axis_fingers_open == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
+if (axis_1_up == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, HIGH);}
+if (axis_2_up == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, HIGH);}
+if (axis_fingers_open == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, HIGH);}
 
-if (axis_1_down == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, HIGH);}
-if (axis_2_down == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, HIGH);}
-if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, HIGH);}
+if (axis_1_down == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, LOW);}
+if (axis_2_down == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, LOW);}
+if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
 
 //ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
     if (currentmillis - previousmillis >= interval) { //если прошло больше времени чем интервал...
