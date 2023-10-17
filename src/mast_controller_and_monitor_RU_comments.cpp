@@ -368,6 +368,9 @@ valve_test_value = analogRead(valve_test_pin); //считываем значен
 digitalWrite(test_relay, LOW);
 digitalWrite(fingers_close_relay, LOW);
 //конец проверки клапана 6
+
+analogReference(DEFAULT);
+
 tm1637.displayByte(_U, _1, _U, _6);
 delay(500);
 
