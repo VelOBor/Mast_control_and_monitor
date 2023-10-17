@@ -528,11 +528,11 @@ if (axis_fingers_neutral == true && lock_3 == false){digitalWrite(output_power, 
 
 if (axis_1_up == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, LOW);digitalWrite(mast1_down_relay, HIGH);}
 if (axis_2_up == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, LOW);digitalWrite(mast2_down_relay, HIGH);}
-if (axis_fingers_open == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, HIGH);}
+if (axis_fingers_open == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
 
 if (axis_1_down == true && lock_1 == false){analogWrite(output_power, axis_1_out);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, LOW);}
 if (axis_2_down == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, LOW);}
-if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
+if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, LOW);digitalWrite(fingers_close_relay, HIGH);}
 
 //ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
     if (currentmillis - previousmillis >= interval) { //если прошло больше времени чем интервал...
