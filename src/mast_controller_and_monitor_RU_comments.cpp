@@ -145,6 +145,7 @@ pinMode(axis_fingers, INPUT); //ось "пальцы", потенциометр,
 pinMode(neutral_switch_3, INPUT_PULLUP); //концевик нейтрали оси "пальцы", !!!РАЗОМКНУТ КОНЦЕВИК == НЕЙТРАЛЬНОЕ ПОЛОЖЕНИЕ!!!
 
 //определения режимов работы пинов выходов
+pinMode(test_relay, OUTPUT); //реле тестирования клапанов
 pinMode(mast1_up_relay, OUTPUT); //мачта элемент 1 выход на реле ВВЕРХ
 pinMode(mast1_down_relay, OUTPUT); //мачта элемент 1 выход на реле ВНИЗ
 pinMode(mast2_up_relay, OUTPUT); //мачта элемент 2 выход на реле ВВЕРХ
