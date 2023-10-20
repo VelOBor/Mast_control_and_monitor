@@ -438,7 +438,7 @@ if (axis_2_down == true && lock_2 == false){analogWrite(output_power, axis_2_out
 if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
 
 
-===============================================================================================
+//===============================================================================================
 
 
 
