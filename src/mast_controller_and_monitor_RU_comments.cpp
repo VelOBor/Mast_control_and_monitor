@@ -7,7 +7,7 @@
 
 //==================ДОБАВЛЕНИЕ НУЖНЫХ БИБЛИОТЕК==================
 //>>>УДАЛИТЬ (ИЛИ ЗАКОММЕНТИРОВАТЬ //) СЛЕДУЮЩУЮ 1 СТРОКУ ПРИ ОБРАБОТКЕ ВНЕ СРЕДЫ VSCode Platformio<<<
-#include <Arduino.h> //библиотека Arduino для использования в VSCode PlatformIO (НЕ НУЖНА ЕСЛИ ПИСАТЬ И/ИЛИ ПРОШИВАТЬ ИЗ ARDUINO IDE!!!)
+//#include <Arduino.h> //библиотека Arduino для использования в VSCode PlatformIO (НЕ НУЖНА ЕСЛИ ПИСАТЬ И/ИЛИ ПРОШИВАТЬ ИЗ ARDUINO IDE!!!)
 //>>>УДАЛИТЬ (ИЛИ ЗАКОММЕНТИРОВАТЬ //) ПРЕДЫДУЩУЮ 1 СТРОКУ ПРИ ОБРАБОТКЕ ВНЕ СРЕДЫ VSCode Platformio<<<
 
 #include <Wire.h> //библиотека I2C
@@ -44,7 +44,7 @@ out5-D6(выход на реле5) реле 5-6 выдвинутьзадвину
 out6-D7(выход на реле6)
 D11-выход ШИМ на управление мосфетом
 */
-int test_relay = 1; //реле замыкается только для проверки сопротивления (напряжения) на клапанах, совместно с реле управления
+int test_relay = A3; //реле замыкается только для проверки сопротивления (напряжения) на клапанах, совместно с реле управления
 
 int mast1_up_relay = 2;
 int mast1_down_relay = 3;
@@ -72,6 +72,18 @@ int display_clk = 12; //CLK пин модуля TM1637
 int display_dio = 13; //DIO пин модуля TM1637
 
 //==================ПЕРЕМЕННЫЕ==================
+int delay_test_disp = 2000; //пауза на время вывода tESt на дисплей
+int delay_u_disp = 2000; //пауза на время вывода номера клапана на дисплей
+int delay_err_disp = 2000; //пауза на время вывода результата проверки на дисплей
+int delay_done_disp = 2000; //пауза на время вывода dOnE на дисплей
+int delay_redy_disp = 3000; //пауза на время вывода rEdY на дисплей
+int delay_boot = 1000;
+int delay_short = 500;
+
+//если напряжение ниже 0.857 - U1SC (короткое замыкание), если выше 0.888 то U1OC (обрыв цепи)
+float valve_sc_limit = 0.860; //нижний предел напряжения на тестируемом клапане
+float valve_oc_limit = 0.880; //верхний предел напряжения на тестируемом клапане
+
 float current_mA = 0.0; //float для считывания данных с модуля INA219
 
 float valve_test_value = 0.0; //float для проверки сопротивления (напряжения) на клапанах
@@ -123,13 +135,9 @@ TM1637 tm1637(display_clk, display_dio); //создание объекта "tm16
 
 //==================НАСТРОЙКИ, выполняется разово при включении МК==================
 void setup() {
-//Serial.begin(9600); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
+Serial.begin(9600); //инициализируем последовательный протокол, удалить строку после завершения написания и проверки и перепроверки работоспособности системы
 Wire.begin(); //инициализуруем интерфейс I2C
 
-//===удалить последующие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
-//  if(!ina219.init()){ //проверка подключения модуля ina219 
-//    Serial.println("INA219 not connected!");} //возвращает ошибку если модуль не подключён
-//===удалить предыдущие 2 строки кода +1 строку комментария после завершения написания и проверки и перепроверки работоспособности системы
 
 tm1637.init(); //инициализируем модуль tm1637
 tm1637.set(BRIGHT_TYPICAL); //устанавливаем яркость дисплея
@@ -177,222 +185,82 @@ lock_3 = false; //блокировка оси "пальцы"
 //ВСЁ ИДЁТ ЧЕРЕЗ РЕЛЕ ПРОВЕРОК НА Д1!!!
 //проверка работоспособности модуля ТМ путём вывода символов "_OC_" (open circuit, обрыв цепи), "_SC_" (short circuit, короткое замыкани) на 0.5 сек каждое, "DONE" и пауза на 2 секунды
 tm1637.displayByte(_d, _i, _S, _P);
-delay(500);
+delay(delay_test_disp);
 tm1637.displayByte(_t, _E, _S, _t);
-delay(500);
+delay(delay_test_disp);
 
-tm1637.displayByte(_8, _8, _8, _8);
-delay(500);
+tm1637.displayByte(_dash, _dash, _dash, _8);
+delay(delay_short);
+tm1637.displayByte(_dash, _dash, _8, _dash);
+delay(delay_short);
+tm1637.displayByte(_dash, _8, _dash, _dash);
+delay(delay_short);
+tm1637.displayByte(_8, _dash, _dash, _dash);
+delay(delay_short);
 
 tm1637.displayByte(_dash, _O, _C, _dash);
-delay(500);
+delay(delay_err_disp);
 
 tm1637.displayByte(_dash, _S, _C, _dash);
-delay(500);
+delay(delay_err_disp);
 
 tm1637.displayByte(_d, _i, _S, _P);
-delay(500);
+delay(delay_test_disp);
 tm1637.displayByte(_t, _E, _S, _t);
-delay(500);
+delay(delay_test_disp);
 tm1637.displayByte(_D, _O, _N, _E);
-delay(1000);
+delay(delay_done_disp);
 
 //проверка сопротивления на клапанах 1-6
 analogReference(INTERNAL); //ставим опорное напряжение на 1.1В для ардуино нано
+delay(delay_boot);
+//считываем значение на А7 от 0-1023, которое соответствует напряжению от 0-1.1В, нужно выполнить map();
 
 //клапан 1
 tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
+delay(delay_test_disp); //пауза
 tm1637.displayByte(_dash, _U, _1, _dash); //отображаем U1 на дисплее, напряжение на клапане 1
-delay(500); //пауза на 0.5 секунд
+delay(delay_u_disp); //пауза
 
 digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
 digitalWrite(mast1_up_relay, LOW); //замыкаем реле клапана 1
-delay(100); //пауза 0.1 секунд
+delay(delay_u_disp); //пауза
 
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
+valve_test_value = map(analogRead(valve_test_pin), 0, 1023, 0, 1.100); //считываем значение на тестовом пине
+    if (valve_test_value < valve_oc_limit) //проверяем если значение менне чем нижний предел, то...
     {
         tm1637.displayByte(_U, _1, _O, _C); //выводим на дисплей ошибку "клапан 1 обрыв цепи"
-        delay(1000); //пауза на 1 сек
+        delay(delay_err_disp); //пауза
     }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
+    else if(valve_test_value > valve_sc_limit) //проверяем если значение более чем верхний предел, то
     {
         tm1637.displayByte(_U, _1, _S, _C); //выводим на дисплей ошибку "клапан 1 короткое замыкание"
-        delay(1000); //пауза на 1 сек
+        delay(delay_err_disp); //пауза
     }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
+    else //если иначе, то по логике вещей значение между нижним и верхним пределом, и выводим
     {
         tm1637.displayByte(_U, _1, _o, _n); //выводим на дисплей "клапан 1 включен"
-        delay(500); //пауза на 0.5 сек
+        delay(delay_err_disp); //пауза на 0.5 сек
     }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast1_up_relay, HIGH);
+//digitalWrite(test_relay, LOW); //размыкаем тестовое реле
+//digitalWrite(mast1_up_relay, HIGH); //размыкаем реле клапана 1
 //конец проверки клапана 1
 
-//клапан 2
-tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
-tm1637.displayByte(_dash, _U, _2, _dash); //отображаем U2 на дисплее, напряжение на клапане 2
-delay(500); //пауза на 0.5 секунд
-
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast1_down_relay, LOW); //замыкаем реле клапана 2
-delay(100); //пауза 0.1 секунд
-
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
-    {
-        tm1637.displayByte(_U, _2, _O, _C); //выводим на дисплей ошибку "клапан 2 обрыв цепи"
-        delay(1000); //пауза на 1 сек
-    }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
-    {
-        tm1637.displayByte(_U, _2, _S, _C); //выводим на дисплей ошибку "клапан 2 короткое замыкание"
-        delay(1000); //пауза на 1 сек
-    }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
-    {
-        tm1637.displayByte(_U, _2, _o, _n); //выводим на дисплей "клапан 2 включен"
-        delay(500); //пауза на 0.5 сек
-    }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast1_down_relay, HIGH);
-//конец проверки клапана 2
-
-//клапан 3
-tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
-tm1637.displayByte(_dash, _U, _3, _dash); //отображаем U3 на дисплее, напряжение на клапане 3
-delay(500); //пауза на 0.5 секунд
-
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast2_up_relay, LOW); //замыкаем реле клапана 3
-delay(100); //пауза 0.1 секунд
-
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
-    {
-        tm1637.displayByte(_U, _3, _O, _C); //выводим на дисплей ошибку "клапан 3 обрыв цепи"
-        delay(1000); //пауза на 1 сек
-    }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
-    {
-        tm1637.displayByte(_U, _3, _S, _C); //выводим на дисплей ошибку "клапан 3 короткое замыкание"
-        delay(1000); //пауза на 1 сек
-    }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
-    {
-        tm1637.displayByte(_U, _3, _o, _n); //выводим на дисплей "клапан 3 включен"
-        delay(500); //пауза на 0.5 сек
-    }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast2_up_relay, HIGH);
-//конец проверки клапана 3
-
-//клапан 4
-tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
-tm1637.displayByte(_dash, _U, _4, _dash); //отображаем U4 на дисплее, напряжение на клапане 4
-delay(500); //пауза на 0.5 секунд
-
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(mast2_down_relay, LOW); //замыкаем реле клапана 4
-delay(100); //пауза 0.1 секунд
-
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
-    {
-        tm1637.displayByte(_U, _4, _O, _C); //выводим на дисплей ошибку "клапан 4 обрыв цепи"
-        delay(1000); //пауза на 1 сек
-    }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
-    {
-        tm1637.displayByte(_U, _4, _S, _C); //выводим на дисплей ошибку "клапан 4 короткое замыкание"
-        delay(1000); //пауза на 1 сек
-    }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
-    {
-        tm1637.displayByte(_U, _4, _o, _n); //выводим на дисплей "клапан 4 включен"
-        delay(500); //пауза на 0.5 сек
-    }
-digitalWrite(test_relay, LOW);
-digitalWrite(mast2_down_relay, HIGH);
-//конец проверки клапана 4
-
-//клапан 5
-tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
-tm1637.displayByte(_dash, _U, _5, _dash); //отображаем U5 на дисплее, напряжение на клапане 5
-delay(500); //пауза на 0.5 секунд
-
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(fingers_close_relay, LOW); //замыкаем реле клапана 5
-delay(100); //пауза 0.1 секунд
-
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
-    {
-        tm1637.displayByte(_U, _5, _O, _C); //выводим на дисплей ошибку "клапан 5 обрыв цепи"
-        delay(1000); //пауза на 1 сек
-    }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
-    {
-        tm1637.displayByte(_U, _5, _S, _C); //выводим на дисплей ошибку "клапан 5 короткое замыкание"
-        delay(1000); //пауза на 1 сек
-    }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
-    {
-        tm1637.displayByte(_U, _5, _o, _n); //выводим на дисплей "клапан 5 включен"
-        delay(500); //пауза на 0.5 сек
-    }
-digitalWrite(test_relay, LOW);
-digitalWrite(fingers_close_relay, HIGH);
-//конец проверки клапана 5
-
-//клапан 6
-tm1637.displayByte(_t, _E, _S, _t); //отображаем teSt на дисплее
-delay(500); //пауза на 0.5 секунд
-tm1637.displayByte(_dash, _U, _6, _dash); //отображаем U6 на дисплее, напряжение на клапане 6
-delay(500); //пауза на 0.5 секунд
-
-digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
-digitalWrite(fingers_open_relay, LOW); //замыкаем реле клапана 6
-delay(100); //пауза 0.1 секунд
-
-valve_test_value = analogRead(valve_test_pin); //считываем значение на тестовом пине
-    if (valve_test_value < 0.857) //проверяем если значение менне чем 0.857, то...
-    {
-        tm1637.displayByte(_U, _6, _O, _C); //выводим на дисплей ошибку "клапан 6 обрыв цепи"
-        delay(1000); //пауза на 1 сек
-    }
-    else if(valve_test_value > 0.888) //проверяем если значение более чем 0.888, то
-    {
-        tm1637.displayByte(_U, _6, _S, _C); //выводим на дисплей ошибку "клапан 6 короткое замыкание"
-        delay(1000); //пауза на 1 сек
-    }
-    else //если иначе, то по логике вещей значение между 0.857 и 0.888, и выводим
-    {
-        tm1637.displayByte(_U, _6, _o, _n); //выводим на дисплей "клапан 6 включен"
-        delay(500); //пауза на 0.5 сек
-    }
-digitalWrite(test_relay, LOW);
-digitalWrite(fingers_open_relay, HIGH);
-//конец проверки клапана 6
 
 analogReference(DEFAULT);
+delay(delay_boot);
 
 tm1637.displayByte(_U, _1, _U, _6);
-delay(500);
+delay(delay_err_disp);
 
 tm1637.displayByte(_t, _E, _S, _t);
-delay(500);
+delay(delay_test_disp);
 
 tm1637.displayByte(_D, _O, _N, _E);
-delay(1000);
+delay(delay_test_disp);
 
 tm1637.displayByte(_r, _E, _d, _Y);
-delay(3000);
+delay(delay_redy_disp);
 
 //конец проверки напряжения на клапанах
 }
@@ -409,13 +277,20 @@ delay(3000);
 
 //==================ОСНОВНОЙ ЦИКЛ, выполняется пока работает МК==================
 void loop() {
+//=====================================================================================================
 
 tm1637.clearDisplay(); //очистить дисплей
 //выключить ШИМ выход и разомкнуть все реле если ось в нейтрали
-if (axis_1_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);}
-if (axis_2_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);}
-if (axis_fingers_neutral == true){digitalWrite(output_power, HIGH);;digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, HIGH);}
+//turned off for testing
+//if (axis_1_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast1_up_relay, HIGH);digitalWrite(mast1_down_relay, HIGH);}
+//if (axis_2_neutral == true){digitalWrite(output_power, HIGH);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, HIGH);}
+//if (axis_fingers_neutral == true){digitalWrite(output_power, HIGH);;digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, HIGH);}
 
+//testing valve 1 voltage
+digitalWrite(test_relay, HIGH); //замыкаем тестовое реле
+digitalWrite(mast1_up_relay, LOW); //замыкаем реле клапана 1
+valve_test_value = map(analogRead(valve_test_pin), 0, 1023, 0, 1.100); //считываем значение на тестовом пине
+Serial.println(valve_test_value);
 
 currentmillis = millis(); //записать текущее время с последней перезагрузки
 
@@ -431,17 +306,33 @@ pressure_val = current_mA*100;
 //==================КОНВЕРТИРОВАНИЕ СЫРЫХ ДАННЫХ В ФАКТИЧЕСКОЕ ДАВЛЕНИЕ ДЛЯ ВЫВОДА НА ДИСПЛЕЙ >>>!!!ОБЯЗАТЕЛЬНО ОТКАЛИБРОВАТЬ!!!<<<==================
 pressure_actual = map(pressure_val, 400, 2000, 0, 250);
 
+//ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
+    if (currentmillis - previousmillis >= interval) { //если прошло больше времени чем интервал...
+        if (open_circuit == true || short_circuit == true) //если "обрыв цепи" ИЛИ "короткое замыкание"...
+        {
+            if (open_circuit == true) //если "обрыв цепи" ИСТИНА
+            {
+            tm1637.clearDisplay(); //...то очистить дисплей...
+            tm1637.displayByte(_dash, _O, _C, _dash); //...вывести "_OC_" на дисплей...
+            previousmillis = currentmillis; //...и обновить таймер
+            }
+            else if (short_circuit == true) //иначе если "короткое замыкание" ИСТИНА
+            {
+            tm1637.clearDisplay(); //...то очистить дисплей...
+            tm1637.displayByte(_dash, _S, _C, _dash); //...вывести "_SC_" на дисплей...
+            previousmillis = currentmillis; //...и обновить таймер    
+            }    
+        }        
+        
+        else
+        {
+        tm1637.clearDisplay(); //...то очистить дисплей...
+        tm1637.displayInt(pressure_actual); //...вывести значение на дисплей...
+        previousmillis = currentmillis; //...и обновить таймер
+        }
+    }
+
 //==================СЧИТЫВАНИЕ ОСЕЙ==================
-
-
-
-
-
-//======================корректировать движение с использованием реле 6шт и ШИМ 1 шт ==========================
-
-
-
-
 
 //проверяем состояние концевиков и если они не замкнуты, то считываем значения джойстиков
 if (axis_1_neutral == false){axis_1_val = analogRead(axis_1);}
@@ -546,34 +437,12 @@ if (axis_1_down == true && lock_1 == false){analogWrite(output_power, axis_1_out
 if (axis_2_down == true && lock_2 == false){analogWrite(output_power, axis_2_out);digitalWrite(mast2_up_relay, HIGH);digitalWrite(mast2_down_relay, LOW);}
 if (axis_fingers_close == true && lock_3 == false){digitalWrite(output_power, axis_fingers_out);digitalWrite(fingers_open_relay, HIGH);digitalWrite(fingers_close_relay, LOW);}
 
-//ВЫВОД ЗНАЧЕНИЯ ДАВЛЕНИЯ НА ДИСПЛЕЙ
-    if (currentmillis - previousmillis >= interval) { //если прошло больше времени чем интервал...
-        if (open_circuit == true || short_circuit == true) //если "обрыв цепи" ИЛИ "короткое замыкание"...
-        {
-            if (open_circuit == true) //если "обрыв цепи" ИСТИНА
-            {
-            tm1637.clearDisplay(); //...то очистить дисплей...
-            tm1637.displayByte(_dash, _O, _C, _dash); //...вывести "_OC_" на дисплей...
-            previousmillis = currentmillis; //...и обновить таймер
-            }
-            else if (short_circuit == true) //иначе если "короткое замыкание" ИСТИНА
-            {
-            tm1637.clearDisplay(); //...то очистить дисплей...
-            tm1637.displayByte(_dash, _S, _C, _dash); //...вывести "_SC_" на дисплей...
-            previousmillis = currentmillis; //...и обновить таймер    
-            }    
-        }        
-        
-        else
-        {
-        tm1637.clearDisplay(); //...то очистить дисплей...
-        tm1637.displayInt(pressure_actual); //...вывести значение на дисплей...
-        previousmillis = currentmillis; //...и обновить таймер
-        }
-    }
+
+===============================================================================================
 
 
-/*
+
+/* turning off all serial for testing valve voltage
 //ВЫВОД ДАННЫХ НА ПОСЛЕДОВАТЕЛЬНЫЙ ПОРТ ДЛЯ ДЕБАГГИНГА, удалить после завершения написания и проверки и перепроверки работоспособности системы
 //данные оси 1
 Serial.print("A1V:"); Serial.print(axis_1_val); Serial.print(" A1O:"); Serial.print(axis_1_out);
